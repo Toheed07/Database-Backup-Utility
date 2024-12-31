@@ -13,18 +13,18 @@ def send_slack_notification(webhook_url, message):
     try:
         print(f"Slack notification sent: {message}")
         print(f"Slack notification sent: {webhook_url}")
-    #     response = requests.post(
-    #         webhook_url, data=json.dumps(slack_data),
-    #         headers={'Content-Type': 'application/json'}
-    #     )
+        response = requests.post(
+            webhook_url, data=json.dumps(slack_data),
+            headers={'Content-Type': 'application/json'}
+        )
 
-    #     if response.status_code != 200:
-    #         print(f"Request to Slack returned an error {response.status_code}, the response is: {response.text}")
-    #         raise ValueError(f"Request to Slack returned an error {response.status_code}, the response is: {response.text}")
+        if response.status_code != 200:
+            print(f"Request to Slack returned an error {response.status_code}, the response is: {response.text}")
+            raise ValueError(f"Request to Slack returned an error {response.status_code}, the response is: {response.text}")
 
-    #     print("Slack notification sent: {message}")
+        print("Slack notification sent: {message}")
 
-    # except requests.exceptions.RequestException as e:
-    #     print(f"Failed to send Slack notification due to a request error: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send Slack notification due to a request error: {e}")
     except Exception as e:
         print(f"Unexpected error while sending Slack notification: {e}")

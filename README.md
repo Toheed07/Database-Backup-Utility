@@ -36,7 +36,7 @@ Project Link : https://roadmap.sh/projects/database-backup-utility
 1. Clone this repository:
     ```bash
     git clone https://github.com/Toheed07/Database-Backup-Utility.git
-    cd backup-restore-utility
+    cd Database-Backup-Utility
     ```
 
 2. Create and activate a virtual environment:
@@ -98,6 +98,8 @@ python cli.py restore --db-type <mongo|postgres> --backup-path <path-to-backup-f
     ```
 
 ---
+## Encryption
+The utility supports encryption and decrytion for both backup and restore operations automatically. If you want to disable this operation, you can pass `--encrypt=False`.
 
 ## Logging
 The utility uses Python’s `logging` module to provide detailed logs. Logs are stored in the `backup_utility` file.
@@ -112,28 +114,6 @@ The utility uses Python’s `logging` module to provide detailed logs. Logs are 
 
 ---
 
-## Troubleshooting
-
-### Common Errors
-1. **`mongodump` or `mongorestore` not found**:
-   - Ensure MongoDB utilities are installed and in your PATH.
-   - Example installation for Ubuntu:
-     ```bash
-     sudo apt install mongodb-clients
-     ```
-
-2. **Permission Denied**:
-   - Ensure the backup folder has write permissions.
-   - Example command to fix permissions:
-     ```bash
-     chmod -R 755 ./backups
-     ```
-
-3. **Unsupported File Format**:
-   - Ensure you are using `.tar.gz` files for backups.
-
----
-
 
 ## Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
@@ -142,7 +122,7 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ## Future Plans
 - Add support for more database types (e.g., MySQL, SQLite).
-- Implement scheduled backups using a task scheduler.
+- Implement scheduled backups.
 
 ---
 

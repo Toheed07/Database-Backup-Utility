@@ -1,12 +1,17 @@
 import psycopg2
 import subprocess
 import shutil
-from utils.compression import compress_backup, compress_backup_tar_file, decompress_backup_file
+from utils.compression import (
+    compress_backup,
+    compress_backup_tar_file,
+    decompress_backup_file,
+)
 from storage.local_storage import store_locally
 from storage.azure_storage import store_on_azure
 from storage.s3_storage import store_on_s3
 from storage.gcp_storage import store_on_gcp
 from utils.notification import send_slack_notification
+from utils.encryption import encrypt_file, decrypt_file
 
 
 class PostgresHandler:
@@ -32,87 +37,6 @@ class PostgresHandler:
             self.connection.close()
             logger.info("PostgreSQL connection closed.")
 
-    # def backup(
-    #     self,
-    #     compress,
-    #     storage,
-    #     path="/Users/toheed/Projects/Database Backup Utility/src/backups/postgres/backup.sql",
-    #     provider=None,
-    #     bucket=None,
-    # ):
-    #     """
-    #     Backup the PostgreSQL database to a file.
-
-    #     Args:
-    #         backup_path (str): The file path to save the backup.
-    #     """
-    #     try:
-    #         # Ensure pg_dump is available
-    #         if not shutil.which("pg_dump"):
-    #             raise FileNotFoundError(
-    #                 "pg_dump command not found. Ensure it is installed and in your PATH."
-    #             )
-
-    #         command = [
-    #             "pg_dump",
-    #             "-h",
-    #             self.config["host"],
-    #             "-p",
-    #             str(self.config["port"]),
-    #             "-U",
-    #             self.config["user"],
-    #             "-d",
-    #             self.config["dbname"],
-    #             "-f",
-    #             path,
-    #             "-b",
-    #             "-v",
-    #             "--large-objects",
-    #             "-F",
-    #             "c",
-    #         ]
-
-    #         with open(path, "w") as backup_file:
-    #             subprocess.run(command, stdout=backup_file, check=True)
-    #         print(f"Backup successful. File saved to {path}")
-
-    #         if compress:
-    #             compressed_file = compress_backup_tar(path, f"{path}.gz")
-    #             if storage == "cloud":
-    #                 if not provider or not bucket:
-    #                     raise ValueError("Cloud provider and bucket name are required for cloud storage.")
-    #                 if provider == "aws":
-    #                     store_on_s3(compressed_file, bucket)
-    #                 elif provider == "gcp":
-    #                     store_on_gcp(compressed_file, bucket)
-    #                 elif provider == "azure":
-    #                     store_on_azure(compressed_file, bucket)
-    #                 else:
-    #                     raise ValueError("Unsupported cloud provider.")
-    #             else:
-    #                 raise ValueError("Unsupported storage type. Choose 'local' or 'cloud'.")
-    #             return compressed_file
-    #         else:
-    #             if storage == "cloud":
-    #                 if not provider or not bucket:
-    #                     raise ValueError("Cloud provider and bucket name are required for cloud storage.")
-    #                 if provider == "aws":
-    #                     store_on_s3(path, bucket)
-    #                 elif provider == "gcp":
-    #                     store_on_gcp(path, bucket)
-    #                 elif provider == "azure":
-    #                     store_on_azure(path, bucket)
-    #                 else:
-    #                     raise ValueError("Unsupported cloud provider.")
-    #             else:
-    #                 raise ValueError("Unsupported storage type. Choose 'local' or 'cloud'.")
-    #             return path
-
-    #     except subprocess.CalledProcessError as e:
-    #         raise RuntimeError(f"Backup failed: {e}")
-    #     except Exception as e:
-    #         raise RuntimeError(f"An error occurred during backup: {e}")
-
     def backup(
         self,
         compress,
@@ -120,9 +44,11 @@ class PostgresHandler:
         notify_slack,
         slack_webhook_url,
         logger,
-        path="/Users/toheed/Projects/Database Backup Utility/src/backups/postgres/backup.sql",
+        encrypt,
+        path,
         provider=None,
         bucket=None,
+        encrypted_file=None,
     ):
         """
         Backup the PostgreSQL database to a file.
@@ -172,13 +98,18 @@ class PostgresHandler:
             if compress:
                 backup_file = compress_backup_tar_file(path, f"{path}.gz")
 
+            # Encrypt the backup file
+            if encrypt:
+                encrypted_file = encrypt_file(backup_file)
+            logger.info(f"Encrypted file saved to {encrypted_file}")
+
             # Handle storage
-            self._handle_storage(backup_file, storage, provider, bucket, logger)
+            self._handle_storage(encrypted_file, storage, provider, bucket, logger)
 
             # Notify Slack
             if notify_slack and slack_webhook_url:
                 send_slack_notification(slack_webhook_url, f"Backup successful: {path}")
-            return backup_file
+            return encrypted_file
 
         except subprocess.CalledProcessError as e:
 
@@ -223,11 +154,11 @@ class PostgresHandler:
         """
         try:
             if provider == "aws":
-                store_on_s3(file_path, bucket)
+                store_on_s3(file_path, bucket, logger)
             elif provider == "gcp":
-                store_on_gcp(file_path, bucket)
+                store_on_gcp(file_path, bucket, logger)
             elif provider == "azure":
-                store_on_azure(file_path, bucket)
+                store_on_azure(file_path, bucket, logger)
             else:
                 raise ValueError("Unsupported cloud provider.")
             logger.info(f"Backup uploaded to {provider} bucket '{bucket}'")
@@ -245,6 +176,13 @@ class PostgresHandler:
         """
         try:
             logger.info("Starting restore...")
+
+            # Decrypt the backup file
+            logger.info("Decrypting the backup file...")
+            backup_file = decrypt_file(backup_file)
+            logger.info(f"Decrypted file available at {backup_file}")
+
+            # Decompress the backup file
             decompressed_file = decompress_backup_file(backup_file)
 
             # Ensure pg_restore is available

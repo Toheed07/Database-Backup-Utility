@@ -2,6 +2,8 @@
 
 This utility provides a robust and flexible solution for backing up and restoring databases. Currently, it supports **MongoDB** and **PostgreSQL**, with plans to extend functionality in the future.
 
+Project Link : https://roadmap.sh/projects/database-backup-utility
+
 ## Features
 - **Backup**: Automatically compresses and stores backups for MongoDB and PostgreSQL.
 - **Restore**: Decompresses and restores data from backup files.
@@ -132,10 +134,6 @@ The utility uses Python’s `logging` module to provide detailed logs. Logs are 
 
 ---
 
-## License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
----
 
 ## Contributing
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
@@ -148,6 +146,5 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ---
 
-## Authors
+## Author
 - Toheed (toheedjamaal9@gmail.com)
-

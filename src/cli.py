@@ -14,14 +14,14 @@ def get_db_params(db_type: str):
     """
     Collects database connection parameters based on the type of database.
     """
-    if db_type in ["mysql", "postgres"]:
+    if db_type in ["postgres"]:
         return {
             "host": typer.prompt("Enter host"),
             "user": typer.prompt("Enter username"),
             "password": typer.prompt("Enter password", hide_input=True),
             "database": typer.prompt("Enter database name"),
             "port": typer.prompt(
-                "Enter port", default=3306 if db_type == "mysql" else 5432
+                "Enter port", default=5432
             ),
         }
     elif db_type == "mongo":
@@ -34,8 +34,6 @@ def get_db_params(db_type: str):
             ),
             "database": typer.prompt("Enter database name"),
         }
-    elif db_type == "sqlite":
-        return {"database": typer.prompt("Enter path to SQLite database")}
     else:
         typer.echo("Unsupported database type!")
         raise typer.Exit()
@@ -44,7 +42,7 @@ def get_db_params(db_type: str):
 @app.command()
 def backup(
     db_type: str = typer.Option(
-        ..., help="Database type (mysql, postgres, mongo, sqlite)"
+        ..., help="Database type (postgres, mongo)"
     ),
     storage: str = typer.Option("local", help="Storage type (local, cloud)"),
     path: str = typer.Option(
@@ -60,6 +58,7 @@ def backup(
         None, help="Slack Webhook URL for notifications."
     ),
     compress: bool = True,
+    encrypt: bool = True,
 ):
     """
     Perform a database backup.
@@ -78,6 +77,7 @@ def backup(
             slack_webhook_url=slack_webhook_url,
             compress=compress,
             logger=logger,
+            encrypt=encrypt,
         )
         if compress:
             typer.echo(f"Backup and Compressed saved to: {compressed_backup_path}")
@@ -96,7 +96,7 @@ def backup(
 @app.command()
 def restore(
     db_type: str = typer.Option(
-        ..., help="Database type (mysql, postgres, mongo, sqlite)"
+        ..., help="Database type (postgres, mongo)"
     ),
     backup_path: str = typer.Option(
         ..., help="Path to the backup file (compressed or uncompressed)"
@@ -130,14 +130,14 @@ def schedule():
     """
     Schedule automatic backups.
     """
-    # Placeholder for scheduling logic
+    # TODO: Implement the schedule command
     typer.echo("Backup schedule configured successfully.")
 
 
 @app.command()
 def test_connection(
     db_type: str = typer.Option(
-        ..., help="Database type (mysql, postgres, mongo, sqlite)"
+        ..., help="Database type (postgres, mongo)"
     )
 ):
     """
@@ -162,8 +162,9 @@ if __name__ == "__main__":
 """
 Demo commands:
 
-python cli.py backup --db-type postgres --storage cloud --provider aws --bucket billu --notify-slack  --slack-webhook-url "https://hooks.slack.com/services/TOKEN"
-python cli.py backup --db-type mongo --path "/Users/toheed/Projects/Database Backup Utility/src/backups/mongo/" --storage cloud --provider aws --bucket billu --notify-slack  --slack-webhook-url "https://hooks.slack.com/services/TOKEN"
-python cli.py restore --db-type mongo --backup-path "/Users/toheed/Projects/Database Backup Utility/src/backups/mongo/blogDB.tar.gz"
+python cli.py backup --db-type postgres --path "path-to-the-file-location" --storage cloud --provider aws --bucket billu --notify-slack  --slack-webhook-url "https://hooks.slack.com/services/TOKEN" eg: "/Users/toheed/Projects/Database Backup Utility/src/backups/postgres/backup.sql"
+python cli.py backup --db-type mongo --path "path-to-the-file-location" --storage cloud --provider aws --bucket billu --notify-slack  --slack-webhook-url "https://hooks.slack.com/services/TOKEN"
+python cli.py restore --db-type postgres --backup-path "path-to-the-file-location" eg. "/Users/toheed/Projects/Database Backup Utility/src/backups/postgres/backup.sql.gz.enc"
+python cli.py restore --db-type mongo --backup-path "path-to-the-file-location"
 
 """
